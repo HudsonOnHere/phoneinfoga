@@ -34,26 +34,49 @@ function PlatformCheck {
 }
 
 function DownloadLatestRelease {
-    # param (
-    #     [Parameter(Mandatory=$true)]
-    #     $OSType,
-    #     [Parameter(Mandatory=$true)]
-    #     $PhoneinfogaVersion
-    # )
-    
+    # Disabling the progress bar dramatically improves the download speed    
     $ProgressPreference = 'SilentlyContinue'
 
     $InterpolatedString = "https://github.com/sundowndev/phoneinfoga/releases/download/" + $PhoneinfogaVersion + "/phoneinfoga_" + $OSType + ".tar.gz"
 
     Invoke-WebRequest -Uri $InterpolatedString -OutFile "phoneinfoga.exe"
 
-    $ProgressPreference = 'Continue'
+    $ProgressPreference = 'Continue' # Default restored
 }
 
+function ValidateChecksum {
+
+    $LatestReleaseChecksum = "https://github.com/sundowndev/phoneinfoga/releases/download/" + $PhoneinfogaVersion + "/phoneinfoga_checksums.txt"
+
+    $ProgressPreference = 'SilentlyContinue'
+
+    Invoke-WebRequest -Uri $LatestReleaseChecksum -OutFile "phoneinfoga_checksums.txt"
+
+    $ProgressPreference = 'Continue'
+
+    $FileContents = Get-Content -Path ".\phoneinfoga_checksums.txt"
+    $TargetString = "phoneinfoga_" + $OSType + ".tar.gz"
+    
+    foreach ($Line in $FileContents) {
+        if ($Line -like "*$TargetString*") {
+            $TargetHash = $Line.Split(" ")[0]
+            break
+        }
+    }
+
+    $ComputedHash = (Get-FileHash .\phoneinfoga.exe -Algorithm SHA256).hash
+
+    if ($TargetHash.ToLower() -eq $ComputedHash.ToLower()) {
+        Write-Host "Valid Checksum!"
+    } else {
+        Write-Host "Invalid Checksum!"
+    }
+}
 
 
 
 $OSType = PlatformCheck
 $PhoneinfogaVersion = GetPhoneInfogaVersion
 
-DownloadLatestRelease($OSType, $PhoneinfogaVersion)
+# DownloadLatestRelease($OSType, $PhoneinfogaVersion)
+ValidateChecksum
