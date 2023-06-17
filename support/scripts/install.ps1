@@ -1,15 +1,18 @@
 <#
 .SYNOPSIS
-   This function greets a person by name.
+   PhoneInfoga Intaller for Windows
 .DESCRIPTION
-   The Greet function takes a name as input and outputs a greeting message.
-   It displays a friendly greeting message with the provided name.
+   An installer script for downloading the latest release of PhoneInfoga. Without any arguments, this script will attempt detect your platform architecture (Amd64/ARM) and attempt to download the corresponding version of PhoneInfoga. Please submit an issue on GitHub if you encounter issues with this script."
 .PARAMETER Name
    The name of the person to greet.
 .EXAMPLE
    Greet -Name "John"
    Greets the person named John.
 #>
+
+$OSType
+$PhoneinfogaVersion
+$Automatic
 
 # Windows_arm64.tar.gz
 # Windows_armv6.tar.gz
@@ -29,7 +32,8 @@ function PlatformCheck {
     } elseif ($PlatformCheckCommand -like "*ARM64-based PC*") {
         return "Windows_armv6"
     } else {
-        Write-Output "Something else happened"
+        Write-Error "If this happens again, try running this script with the '--manual' flag."
+        throw "Error determining platform architecture automatically."
     }
 }
 
@@ -69,7 +73,8 @@ function ValidateChecksum {
     if ($TargetHash.ToLower() -eq $ComputedHash.ToLower()) {
         Write-Host "Valid Checksum!"
     } else {
-        Write-Host "Invalid Checksum!"
+        Write-Error "It is highly recommended that you validate the checksum of any executable downloaded from the Internet, however you can skip this step if it continues to fail by adding the '--skip-checksum' flag."
+        throw "Checksum validation failed."
     }
 }
 
